@@ -1,0 +1,30 @@
+---
+- name: "Setup On Prem appsvcs service using parameters in JSON Doc"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml
+  tasks:
+  - name: deploy SD-iApp
+    bigip_iapp_service:
+      name: sdmdc_demo
+      template: f5.http
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: false
+      state: "{{ state }}"
+      parameters: "{{ lookup('file', '../templates/sdmdc.json') }}"
+    delegate_to: localhost
+
+  - name: Disabled strict update (somehow earlier template wasn't able to disable)
+    bigip_command:
+      commands:
+        - modify sys application service sdmdc_demo.app/sdmdc_demo strict-updates disabled
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"

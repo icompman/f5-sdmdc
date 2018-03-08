@@ -1,0 +1,18 @@
+---
+- name: "Update GSLB"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml 
+  tasks:
+  - name: Update GSLB record
+    bigip_command:
+      commands:
+        - modify gtm server gtm_server virtual-servers modify { hackazon_web { destination "{{ new_hackazon_ip }}":80 }}
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"

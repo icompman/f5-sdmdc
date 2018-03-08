@@ -1,0 +1,5 @@
+---
+#F5 On Premise
+f5_onprem_ip: 10.1.1.200
+f5_onprem_username: "admin"
+f5_onprem_password: "admin"

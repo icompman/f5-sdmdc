@@ -1,0 +1,67 @@
+---
+- name: "Attach ASM Policy"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml   
+  tasks:
+    - name: Dettach hackazon_waap_policyto the VS
+      bigip_command:
+        commands:
+          - modify ltm virtual sdmdc_demo.app/sdmdc_demo_vs policies delete { hackazon_l7_policy }
+          - modify ltm virtual sdmdc_demo.app/sdmdc_demo_vs profiles delete { websecurity }
+        server: "{{ f5_onprem_ip }}"
+        password: "{{ f5_onprem_username }}"
+        user: "{{ f5_onprem_password }}"
+        validate_certs: no
+      delegate_to: localhost
+      when: state == "absent"
+
+    - name: create l7 policy
+      bigip_policy:
+        server: "{{ f5_onprem_ip }}"
+        password: "{{ f5_onprem_username }}"
+        user: "{{ f5_onprem_password }}"
+        validate_certs: no
+        name: hackazon_l7_policy
+        state: "{{state}}"
+
+    - name: Add WAAP rule to hackazon_l7_policy
+      bigip_policy_rule:
+         server: "{{ f5_onprem_ip }}"
+         password: "{{ f5_onprem_username }}"
+         user: "{{ f5_onprem_password }}"
+         validate_certs: no        
+         name: default
+         policy: hackazon_l7_policy
+         actions:
+          - type: enable
+            asm_policy: hackazon_waap_policy
+         conditions:
+          - type: all_traffic
+      delegate_to: localhost
+      when: state == "present"
+
+    - name: Attach hackazon_waap_policyto the VS
+      bigip_command:
+        commands:
+          - modify ltm virtual sdmdc_demo.app/sdmdc_demo_vs profiles add { websecurity { context all } }
+        server: "{{ f5_onprem_ip }}"
+        password: "{{ f5_onprem_username }}"
+        user: "{{ f5_onprem_password }}"
+        validate_certs: no
+      delegate_to: localhost
+      when: state == "present"
+  
+    - name: Attach hackazon_waap_policyto the VS
+      bigip_command:
+        commands:
+          - modify ltm virtual sdmdc_demo.app/sdmdc_demo_vs policies add { hackazon_l7_policy }
+        server: "{{ f5_onprem_ip }}"
+        password: "{{ f5_onprem_username }}"
+        user: "{{ f5_onprem_password }}"
+        validate_certs: no
+      delegate_to: localhost
+      when: state == "present"
+

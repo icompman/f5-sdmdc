@@ -1,0 +1,29 @@
+---
+- name: "Attach DDoS Profile"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml 
+  tasks:
+  - name: Attach http_ddos profile to the VS
+    bigip_command:
+      commands:
+        - modify ltm virtual sdmdc_demo.app/sdmdc_demo_vs profiles add { http_ddos { context all } }
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Dettach http_ddos profile to the VS
+    bigip_command:
+      commands:
+        - modify ltm virtual sdmdc_demo.app/sdmdc_demo_vs profiles delete { http_ddos }
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "absent"

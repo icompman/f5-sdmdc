@@ -1,0 +1,119 @@
+---
+- name: "Create GSLB related components"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml
+  tasks:
+  - name: Create a data center 
+    bigip_gtm_datacenter:
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: false
+      name: active_dc
+    delegate_to: localhost
+    when: state == "present"
+
+# bigip_gtm_server is not functional at the point of creating this playbook
+  - name: Create GSLB server
+    bigip_command:
+      commands:
+        - create gtm server gtm_server datacenter active_dc devices add { gtm_self_ip { addresses add { 10.1.10.240 { } } } } monitor bigip virtual-servers add { hackazon_web { destination 10.1.10.88:http monitor http } } 
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Create GSLB pool
+    bigip_command:
+      commands:
+        - create gtm pool a gtm_pool { members add { gtm_server:hackazon_web { member-order 0 } } monitor http ttl 1 }
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Create GSLB Wide IP
+    bigip_command:
+      commands:
+        - create gtm wideip a myhackazon.lc { pools add { gtm_pool { order 0 } } }
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+
+  - name: Create GSLB listener
+    bigip_command:
+      commands:
+        - create gtm listener sd-gslb address 10.1.10.53 ip-protocol udp mask 255.255.255.255 port domain profiles add { dns { } udp_gtm_dns { } } translate-address disabled translate-port disabled
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Remove GSLB listener
+    bigip_command:
+      commands:
+        - delete gtm listener sd-gslb
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "absent"
+
+  - name: Remove GSLB Wide IP
+    bigip_command:
+      commands:
+        - delete gtm wideip a myhackazon.lc
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "absent"
+
+
+  - name: delete GSLB server
+    bigip_command:
+      commands:
+        - delete gtm server gtm_server
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "absent"
+
+  - name: delete GSLB pool
+    bigip_command:
+      commands:
+        - delete gtm pool a gtm_pool
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "absent"
+
+  - name: Remove a data center 
+    bigip_gtm_datacenter:
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: false
+      name: active_dc
+    delegate_to: localhost
+    when: state == "absent"
+

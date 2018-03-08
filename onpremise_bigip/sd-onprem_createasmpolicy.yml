@@ -1,0 +1,19 @@
+---
+- name: "Create ASM Policy"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml
+  tasks:
+  - name: "Create or Remove ASM Policy"
+    bigip_asm_policy:
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: false
+      name: hackazon_waap_policy
+      file: ../templates/hackazon_waap_policy.xml
+      active: yes
+      state: "{{ state }}"
+    delegate_to: localhost

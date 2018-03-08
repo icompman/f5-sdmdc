@@ -1,0 +1,52 @@
+---
+- name: "Create HTTP DOS Profile"
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars_files:
+    - ../sdmdc_vars.yml
+  tasks:
+  - name: Create HTTP DOS Profile
+    bigip_command:
+      commands:
+        - create security dos profile http_ddos
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Modify HTTP DOS
+    bigip_command:
+      commands:
+        - modify security dos profile http_ddos { application add { http_ddos { bot-defense { browser-legit-enabled enabled }}}}
+        - modify security dos profile http_ddos { application modify { http_ddos { bot-signatures { check enabled }}}}
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Modify HTTP DOS
+    bigip_command:
+      commands:
+        - modify security dos profile http_ddos { application modify { http_ddos { tps-based { device-tps-increase-rate 100 device-minimum-tps 50 device-maximum-tps 50 device-captcha-challenge enabled mode blocking ip-rate-limiting disabled url-rate-limiting disabled url-enable-heavy disabled}}}}
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "present"
+
+  - name: Remove HTTP DOS
+    bigip_command:
+      commands:
+        - delete security dos profile http_ddos
+      server: "{{ f5_onprem_ip }}"
+      password: "{{ f5_onprem_username }}"
+      user: "{{ f5_onprem_password }}"
+      validate_certs: no
+    delegate_to: localhost
+    when: state == "absent"
