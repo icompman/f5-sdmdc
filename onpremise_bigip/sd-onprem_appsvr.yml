@@ -14,7 +14,7 @@
       password: "{{ f5_onprem_username }}"
       user: "{{ f5_onprem_password }}"
       validate_certs: false
-      #state: "{{ state }}"
+      state: "{{ state }}"
       parameters: "{{ lookup('file', '../templates/sdmdc.json') }}"
     delegate_to: localhost
 
@@ -27,4 +27,4 @@
       user: "{{ f5_onprem_password }}"
       validate_certs: no
     delegate_to: localhost
-    #when: state == "present"
+    when: state == "present"
